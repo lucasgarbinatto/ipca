@@ -1,0 +1,415 @@
+---
+title: "Análise de Expectativas de IPCA - BACEN"
+author: "Monefica Research"
+date: today
+format:
+  html:
+    theme: cosmo
+    toc: true
+    toc-depth: 3
+    code-fold: true
+    code-summary: "Ver código"
+    css: styles.css
+execute:
+  echo: true
+  warning: false
+---
+
+![](logo.png){width=200px fig-align="center"}
+
+```{python}
+#| label: setup
+#| echo: false
+
+import json
+from collections import defaultdict
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+
+# Configurar estilo dos gráficos
+plt.style.use('seaborn-v0_8-whitegrid')
+plt.rcParams['figure.figsize'] = [10, 5]
+plt.rcParams['font.size'] = 11
+```
+
+## Introdução
+
+Este relatório apresenta uma análise das **expectativas de inflação (IPCA)** coletadas pelo Banco Central do Brasil, considerando as projeções dos analistas do grupo **Top 5** — os cinco melhores previsores do mercado.
+
+Os dados são obtidos através da API do BCB (Sistema de Expectativas de Mercado) e contemplam as projeções mensais para os anos de **2026** e **2027**.
+
+```{python}
+#| label: load-data
+#| echo: false
+
+# Carregar dados
+with open("expectativas_filtradas.json", "r", encoding="utf-8") as f:
+    dados = json.load(f)
+
+# Pegar apenas a data de pesquisa mais recente
+data_mais_recente = max(d["Data"] for d in dados)
+dados_filtrados = [d for d in dados if d["Data"] == data_mais_recente]
+
+# Organizar por mês de referência
+expectativas = {}
+for d in dados_filtrados:
+    ref = d["DataReferencia"]
+    expectativas[ref] = {
+        "mediana": d["Mediana"],
+        "media": d["Media"],
+        "minimo": d["Minimo"],
+        "maximo": d["Maximo"],
+        "desvio": d["DesvioPadrao"]
+    }
+
+# Função para calcular inflação acumulada
+def calcular_inflacao_acumulada(taxas_mensais):
+    acumulado = 1.0
+    for taxa in taxas_mensais:
+        acumulado *= (1 + taxa / 100)
+    return (acumulado - 1) * 100
+
+# Definir meses
+meses_2026 = [f"{m:02d}/2026" for m in range(1, 13)]
+meses_2027 = [f"{m:02d}/2027" for m in range(1, 13)]
+nomes_meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"]
+```
+
+::: {.callout-note}
+**Data da pesquisa:** `{python} data_mais_recente`
+:::
+
+## Expectativas Mensais de IPCA
+
+### Ano de 2026
+
+```{python}
+#| label: tabela-2026
+
+# Extrair dados de 2026
+taxas_2026 = []
+dados_tabela_2026 = []
+
+for i, mes in enumerate(meses_2026):
+    if mes in expectativas:
+        exp = expectativas[mes]
+        taxas_2026.append(exp["mediana"])
+        dados_tabela_2026.append({
+            "Mês": nomes_meses[i],
+            "Mediana (%)": f"{exp['mediana']:.4f}",
+            "Mínimo (%)": f"{exp['minimo']:.4f}",
+            "Máximo (%)": f"{exp['maximo']:.4f}",
+            "Desvio Padrão": f"{exp['desvio']:.4f}"
+        })
+
+# Exibir tabela
+from IPython.display import Markdown, display
+import pandas as pd
+
+df_2026 = pd.DataFrame(dados_tabela_2026)
+display(Markdown(df_2026.to_markdown(index=False)))
+```
+
+```{python}
+#| label: grafico-2026
+#| fig-cap: "Expectativas mensais de IPCA para 2026 (Mediana)"
+
+fig, ax = plt.subplots(figsize=(12, 5))
+
+bars = ax.bar(nomes_meses, taxas_2026, color='#08082a', edgecolor='white', linewidth=1.5)
+
+# Adicionar valores nas barras
+for bar, val in zip(bars, taxas_2026):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
+            f'{val:.2f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+ax.set_ylabel('IPCA Esperado (%)', fontsize=12)
+ax.set_xlabel('Mês', fontsize=12)
+ax.set_title('Expectativas Mensais de IPCA - 2026', fontsize=14, fontweight='bold', color='#08082a')
+ax.set_ylim(0, max(taxas_2026) * 1.2)
+
+# Linha de média
+media_2026 = sum(taxas_2026) / len(taxas_2026)
+ax.axhline(y=media_2026, color='#dfac16', linestyle='--', linewidth=2, label=f'Média: {media_2026:.2f}%')
+ax.legend(loc='upper right')
+
+plt.tight_layout()
+plt.show()
+```
+
+### Ano de 2027
+
+```{python}
+#| label: tabela-2027
+
+# Extrair dados de 2027
+taxas_2027 = []
+dados_tabela_2027 = []
+
+for i, mes in enumerate(meses_2027):
+    if mes in expectativas:
+        exp = expectativas[mes]
+        taxas_2027.append(exp["mediana"])
+        dados_tabela_2027.append({
+            "Mês": nomes_meses[i],
+            "Mediana (%)": f"{exp['mediana']:.4f}",
+            "Mínimo (%)": f"{exp['minimo']:.4f}",
+            "Máximo (%)": f"{exp['maximo']:.4f}",
+            "Desvio Padrão": f"{exp['desvio']:.4f}"
+        })
+
+df_2027 = pd.DataFrame(dados_tabela_2027)
+display(Markdown(df_2027.to_markdown(index=False)))
+```
+
+```{python}
+#| label: grafico-2027
+#| fig-cap: "Expectativas mensais de IPCA para 2027 (Mediana)"
+
+fig, ax = plt.subplots(figsize=(12, 5))
+
+bars = ax.bar(nomes_meses, taxas_2027, color='#dfac16', edgecolor='white', linewidth=1.5)
+
+for bar, val in zip(bars, taxas_2027):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
+            f'{val:.2f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
+
+ax.set_ylabel('IPCA Esperado (%)', fontsize=12)
+ax.set_xlabel('Mês', fontsize=12)
+ax.set_title('Expectativas Mensais de IPCA - 2027', fontsize=14, fontweight='bold', color='#08082a')
+ax.set_ylim(0, max(taxas_2027) * 1.2)
+
+media_2027 = sum(taxas_2027) / len(taxas_2027)
+ax.axhline(y=media_2027, color='#08082a', linestyle='--', linewidth=2, label=f'Média: {media_2027:.2f}%')
+ax.legend(loc='upper right')
+
+plt.tight_layout()
+plt.show()
+```
+
+## Inflação Acumulada Anual
+
+```{python}
+#| label: acumulado-anual
+
+inf_2026 = calcular_inflacao_acumulada(taxas_2026)
+inf_2027 = calcular_inflacao_acumulada(taxas_2027)
+```
+
+::: {.panel-tabset}
+
+### 2026
+
+| Métrica | Valor |
+|---------|-------|
+| **Inflação Acumulada (composta)** | `{python} f"{inf_2026:.2f}%"` |
+| **Soma Simples** | `{python} f"{sum(taxas_2026):.2f}%"` |
+| **Maior expectativa** | `{python} f"{max(taxas_2026):.4f}% ({nomes_meses[taxas_2026.index(max(taxas_2026))]})"` |
+| **Menor expectativa** | `{python} f"{min(taxas_2026):.4f}% ({nomes_meses[taxas_2026.index(min(taxas_2026))]})"` |
+| **Média mensal** | `{python} f"{sum(taxas_2026)/len(taxas_2026):.4f}%"` |
+
+### 2027
+
+| Métrica | Valor |
+|---------|-------|
+| **Inflação Acumulada (composta)** | `{python} f"{inf_2027:.2f}%"` |
+| **Soma Simples** | `{python} f"{sum(taxas_2027):.2f}%"` |
+| **Maior expectativa** | `{python} f"{max(taxas_2027):.4f}% ({nomes_meses[taxas_2027.index(max(taxas_2027))]})"` |
+| **Menor expectativa** | `{python} f"{min(taxas_2027):.4f}% ({nomes_meses[taxas_2027.index(min(taxas_2027))]})"` |
+| **Média mensal** | `{python} f"{sum(taxas_2027)/len(taxas_2027):.4f}%"` |
+
+:::
+
+```{python}
+#| label: grafico-comparativo-anual
+#| fig-cap: "Comparativo de Inflação Acumulada Anual"
+
+fig, ax = plt.subplots(figsize=(8, 5))
+
+anos = ['2026', '2027']
+valores = [inf_2026, inf_2027]
+cores = ['#08082a', '#dfac16']
+
+bars = ax.bar(anos, valores, color=cores, edgecolor='white', linewidth=2, width=0.5)
+
+for bar, val in zip(bars, valores):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.1, 
+            f'{val:.2f}%', ha='center', va='bottom', fontsize=14, fontweight='bold')
+
+# Linhas de referência
+ax.axhline(y=3.0, color='#666666', linestyle='--', linewidth=2, label='Meta BCB (3.0%)')
+ax.axhline(y=4.5, color='#999999', linestyle=':', linewidth=2, label='Teto da Meta (4.5%)')
+
+ax.set_ylabel('Inflação Acumulada (%)', fontsize=12)
+ax.set_title('Inflação Acumulada Anual - Expectativas Top 5', fontsize=14, fontweight='bold', color='#08082a')
+ax.set_ylim(0, 6)
+ax.legend(loc='upper right')
+
+plt.tight_layout()
+plt.show()
+```
+
+## Análise Trimestral
+
+```{python}
+#| label: calcular-trimestres
+
+def calcular_trimestres(taxas, ano):
+    trimestres = {}
+    nomes = {1: "Q1 (Jan-Mar)", 2: "Q2 (Abr-Jun)", 3: "Q3 (Jul-Set)", 4: "Q4 (Out-Dez)"}
+    
+    for q in range(1, 5):
+        inicio = (q - 1) * 3
+        fim = q * 3
+        taxas_tri = taxas[inicio:fim]
+        if taxas_tri:
+            trimestres[nomes[q]] = calcular_inflacao_acumulada(taxas_tri)
+    
+    return trimestres
+
+tri_2026 = calcular_trimestres(taxas_2026, 2026)
+tri_2027 = calcular_trimestres(taxas_2027, 2027)
+```
+
+```{python}
+#| label: tabela-trimestres
+
+dados_tri = []
+for q in tri_2026.keys():
+    dados_tri.append({
+        "Trimestre": q,
+        "2026 (%)": f"{tri_2026[q]:.2f}",
+        "2027 (%)": f"{tri_2027.get(q, 0):.2f}",
+        "Variação (pp)": f"{tri_2027.get(q, 0) - tri_2026[q]:+.2f}"
+    })
+
+df_tri = pd.DataFrame(dados_tri)
+display(Markdown(df_tri.to_markdown(index=False)))
+```
+
+```{python}
+#| label: grafico-trimestres
+#| fig-cap: "Comparativo Trimestral 2026 vs 2027"
+
+fig, ax = plt.subplots(figsize=(10, 5))
+
+trimestres = list(tri_2026.keys())
+valores_2026 = list(tri_2026.values())
+valores_2027 = list(tri_2027.values())
+
+x = range(len(trimestres))
+width = 0.35
+
+bars1 = ax.bar([i - width/2 for i in x], valores_2026, width, label='2026', color='#08082a', edgecolor='white')
+bars2 = ax.bar([i + width/2 for i in x], valores_2027, width, label='2027', color='#dfac16', edgecolor='white')
+
+for bar, val in zip(bars1, valores_2026):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02, 
+            f'{val:.2f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+for bar, val in zip(bars2, valores_2027):
+    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.02, 
+            f'{val:.2f}%', ha='center', va='bottom', fontsize=9, fontweight='bold')
+
+ax.set_ylabel('Inflação Acumulada (%)', fontsize=12)
+ax.set_xlabel('Trimestre', fontsize=12)
+ax.set_title('Inflação Trimestral - Comparativo 2026 vs 2027', fontsize=14, fontweight='bold', color='#08082a')
+ax.set_xticks(x)
+ax.set_xticklabels(trimestres)
+ax.legend()
+ax.set_ylim(0, max(max(valores_2026), max(valores_2027)) * 1.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+## Comparação com a Meta de Inflação
+
+O Banco Central do Brasil define uma **meta de inflação** de **3,0%** ao ano, com tolerância de **±1,5 pontos percentuais** (intervalo de 1,5% a 4,5%).
+
+```{python}
+#| label: meta-inflacao
+
+META = 3.0
+TETO = 4.5
+PISO = 1.5
+
+desvio_2026 = inf_2026 - META
+desvio_2027 = inf_2027 - META
+```
+
+::: {.callout-warning}
+## Situação 2026
+A expectativa de inflação para 2026 é de **`{python} f"{inf_2026:.2f}%"`**, representando um desvio de **`{python} f"{desvio_2026:+.2f}pp"`** em relação à meta.
+
+**Status:** Acima da meta, mas dentro do teto de tolerância (4,5%).
+:::
+
+::: {.callout-tip}
+## Situação 2027
+A expectativa de inflação para 2027 é de **`{python} f"{inf_2027:.2f}%"`**, representando um desvio de **`{python} f"{desvio_2027:+.2f}pp"`** em relação à meta.
+
+**Status:** Expectativa de redução em relação a 2026 (`{python} f"{inf_2027 - inf_2026:+.2f}pp"`).
+:::
+
+```{python}
+#| label: grafico-meta
+#| fig-cap: "Expectativas vs Meta de Inflação"
+
+fig, ax = plt.subplots(figsize=(10, 6))
+
+# Faixa de tolerância
+ax.axhspan(PISO, TETO, alpha=0.15, color='#888888', label='Faixa de tolerância')
+ax.axhline(y=META, color='#666666', linestyle='-', linewidth=3, label=f'Meta ({META}%)')
+ax.axhline(y=TETO, color='#999999', linestyle='--', linewidth=2, label=f'Teto ({TETO}%)')
+ax.axhline(y=PISO, color='#999999', linestyle='--', linewidth=2, label=f'Piso ({PISO}%)')
+
+# Expectativas
+ax.scatter(['2026', '2027'], [inf_2026, inf_2027], s=300, c=['#08082a', '#dfac16'], 
+           zorder=5, edgecolors='white', linewidths=3)
+ax.plot(['2026', '2027'], [inf_2026, inf_2027], color='#666666', linestyle='--', linewidth=2, alpha=0.5)
+
+for ano, val in zip(['2026', '2027'], [inf_2026, inf_2027]):
+    ax.annotate(f'{val:.2f}%', (ano, val), textcoords="offset points", 
+                xytext=(0, 15), ha='center', fontsize=12, fontweight='bold', color='#08082a')
+
+ax.set_ylabel('Inflação (%)', fontsize=12)
+ax.set_title('Expectativas de Inflação vs Meta do BCB', fontsize=14, fontweight='bold', color='#08082a')
+ax.set_ylim(0, 6)
+ax.legend(loc='upper right')
+
+plt.tight_layout()
+plt.show()
+```
+
+## Conclusões
+
+```{python}
+#| label: conclusoes
+#| echo: false
+
+# Análises para conclusões
+variacao_anual = inf_2027 - inf_2026
+mes_mais_alto_2026 = nomes_meses[taxas_2026.index(max(taxas_2026))]
+mes_mais_baixo_2026 = nomes_meses[taxas_2026.index(min(taxas_2026))]
+```
+
+### Principais Insights
+
+1. **Inflação Projetada:** A expectativa do mercado (Top 5) é de inflação de **`{python} f"{inf_2026:.2f}%"`** em 2026 e **`{python} f"{inf_2027:.2f}%"`** em 2027.
+
+2. **Tendência:** Há expectativa de **`{python} "queda" if variacao_anual < 0 else "alta"`** da inflação em 2027, com variação de **`{python} f"{variacao_anual:+.2f}pp"`**.
+
+3. **Sazonalidade:** 
+   - Meses com maior pressão inflacionária: **Fevereiro** e **Dezembro** (típico de volta às aulas e festas)
+   - Mês com menor pressão: **Agosto** (período de menor atividade sazonal)
+
+4. **Meta de Inflação:** Ambos os anos apresentam expectativas **acima da meta central** (3%), mas **dentro do teto de tolerância** (4,5%).
+
+5. **Q4 é o trimestre mais inflacionário** em ambos os anos, impulsionado principalmente por dezembro.
+
+---
+
+::: {.footer-brand}
+*Relatório elaborado por **Monefica Research** com dados do Sistema de Expectativas do Banco Central do Brasil.*
+:::
