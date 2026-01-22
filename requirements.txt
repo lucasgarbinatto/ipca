@@ -1,0 +1,7 @@
+openpyxl>=3.1.0
+requests>=2.28.0
+jupyter
+pandas>=1.5.0
+matplotlib>=3.7.0
+ipython>=8.0.0
+tabulate>=0.9.0

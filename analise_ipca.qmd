@@ -112,26 +112,36 @@ display(Markdown(df_2026.to_markdown(index=False)))
 
 ```{python}
 #| label: grafico-2026
-#| fig-cap: "Expectativas mensais de IPCA para 2026 (Mediana)"
+#| fig-cap: "Expectativas mensais de IPCA para 2026 (Mediana com intervalo Mín-Máx)"
+
+# Extrair min/max para 2026
+minimos_2026 = [expectativas.get(m, {}).get('minimo', 0) for m in meses_2026]
+maximos_2026 = [expectativas.get(m, {}).get('maximo', 0) for m in meses_2026]
 
 fig, ax = plt.subplots(figsize=(12, 5))
 
-bars = ax.bar(nomes_meses, taxas_2026, color='#08082a', edgecolor='white', linewidth=1.5)
+# Área de intervalo min-max
+ax.fill_between(nomes_meses, minimos_2026, maximos_2026, alpha=0.2, color='#08082a', label='Intervalo Mín-Máx')
 
-# Adicionar valores nas barras
-for bar, val in zip(bars, taxas_2026):
-    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
-            f'{val:.2f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
+# Linha principal com marcadores
+ax.plot(nomes_meses, taxas_2026, 'o-', color='#08082a', linewidth=2.5, markersize=8, 
+        markerfacecolor='white', markeredgewidth=2, label='Mediana', zorder=3)
+
+# Adicionar valores nos pontos
+for i, val in enumerate(taxas_2026):
+    ax.annotate(f'{val:.2f}%', (nomes_meses[i], val), textcoords="offset points", 
+                xytext=(0, 10), ha='center', fontsize=9, fontweight='bold', color='#08082a')
 
 ax.set_ylabel('IPCA Esperado (%)', fontsize=12)
 ax.set_xlabel('Mês', fontsize=12)
 ax.set_title('Expectativas Mensais de IPCA - 2026', fontsize=14, fontweight='bold', color='#08082a')
-ax.set_ylim(0, max(taxas_2026) * 1.2)
+ax.set_ylim(0, max(maximos_2026) * 1.25)
 
 # Linha de média
 media_2026 = sum(taxas_2026) / len(taxas_2026)
 ax.axhline(y=media_2026, color='#dfac16', linestyle='--', linewidth=2, label=f'Média: {media_2026:.2f}%')
 ax.legend(loc='upper right')
+ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
@@ -164,24 +174,35 @@ display(Markdown(df_2027.to_markdown(index=False)))
 
 ```{python}
 #| label: grafico-2027
-#| fig-cap: "Expectativas mensais de IPCA para 2027 (Mediana)"
+#| fig-cap: "Expectativas mensais de IPCA para 2027 (Mediana com intervalo Mín-Máx)"
+
+# Extrair min/max para 2027
+minimos_2027 = [expectativas.get(m, {}).get('minimo', 0) for m in meses_2027]
+maximos_2027 = [expectativas.get(m, {}).get('maximo', 0) for m in meses_2027]
 
 fig, ax = plt.subplots(figsize=(12, 5))
 
-bars = ax.bar(nomes_meses, taxas_2027, color='#dfac16', edgecolor='white', linewidth=1.5)
+# Área de intervalo min-max
+ax.fill_between(nomes_meses, minimos_2027, maximos_2027, alpha=0.2, color='#dfac16', label='Intervalo Mín-Máx')
 
-for bar, val in zip(bars, taxas_2027):
-    ax.text(bar.get_x() + bar.get_width()/2, bar.get_height() + 0.01, 
-            f'{val:.2f}%', ha='center', va='bottom', fontsize=10, fontweight='bold')
+# Linha principal com marcadores
+ax.plot(nomes_meses, taxas_2027, 's-', color='#dfac16', linewidth=2.5, markersize=8, 
+        markerfacecolor='white', markeredgewidth=2, label='Mediana', zorder=3)
+
+# Adicionar valores nos pontos
+for i, val in enumerate(taxas_2027):
+    ax.annotate(f'{val:.2f}%', (nomes_meses[i], val), textcoords="offset points", 
+                xytext=(0, 10), ha='center', fontsize=9, fontweight='bold', color='#dfac16')
 
 ax.set_ylabel('IPCA Esperado (%)', fontsize=12)
 ax.set_xlabel('Mês', fontsize=12)
 ax.set_title('Expectativas Mensais de IPCA - 2027', fontsize=14, fontweight='bold', color='#08082a')
-ax.set_ylim(0, max(taxas_2027) * 1.2)
+ax.set_ylim(0, max(maximos_2027) * 1.25)
 
 media_2027 = sum(taxas_2027) / len(taxas_2027)
 ax.axhline(y=media_2027, color='#08082a', linestyle='--', linewidth=2, label=f'Média: {media_2027:.2f}%')
 ax.legend(loc='upper right')
+ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()
@@ -238,7 +259,6 @@ for bar, val in zip(bars, valores):
 
 # Linhas de referência
 ax.axhline(y=3.0, color='#666666', linestyle='--', linewidth=2, label='Meta BCB (3.0%)')
-ax.axhline(y=4.5, color='#999999', linestyle=':', linewidth=2, label='Teto da Meta (4.5%)')
 
 ax.set_ylabel('Inflação Acumulada (%)', fontsize=12)
 ax.set_title('Inflação Acumulada Anual - Expectativas Top 5', fontsize=14, fontweight='bold', color='#08082a')
@@ -353,6 +373,29 @@ A expectativa de inflação para 2027 é de **`{python} f"{inf_2027:.2f}%"`**, r
 :::
 
 ```{python}
+#| label: grafico-comparativo-linha
+#| fig-cap: "Comparativo Mensal 2026 vs 2027"
+
+fig, ax = plt.subplots(figsize=(12, 5))
+
+# Linhas de ambos os anos
+ax.plot(nomes_meses, taxas_2026, 'o-', color='#08082a', linewidth=2.5, markersize=8, 
+        markerfacecolor='white', markeredgewidth=2, label='2026', zorder=3)
+ax.plot(nomes_meses, taxas_2027, 's-', color='#dfac16', linewidth=2.5, markersize=8, 
+        markerfacecolor='white', markeredgewidth=2, label='2027', zorder=3)
+
+ax.set_ylabel('IPCA Esperado (%)', fontsize=12)
+ax.set_xlabel('Mês', fontsize=12)
+ax.set_title('Comparativo Mensal de Expectativas IPCA: 2026 vs 2027', fontsize=14, fontweight='bold', color='#08082a')
+ax.set_ylim(0, max(max(taxas_2026), max(taxas_2027)) * 1.25)
+ax.legend(loc='upper right', fontsize=11)
+ax.grid(True, alpha=0.3)
+
+plt.tight_layout()
+plt.show()
+```
+
+```{python}
 #| label: grafico-meta
 #| fig-cap: "Expectativas vs Meta de Inflação"
 
@@ -364,19 +407,19 @@ ax.axhline(y=META, color='#666666', linestyle='-', linewidth=3, label=f'Meta ({M
 ax.axhline(y=TETO, color='#999999', linestyle='--', linewidth=2, label=f'Teto ({TETO}%)')
 ax.axhline(y=PISO, color='#999999', linestyle='--', linewidth=2, label=f'Piso ({PISO}%)')
 
-# Expectativas
-ax.scatter(['2026', '2027'], [inf_2026, inf_2027], s=300, c=['#08082a', '#dfac16'], 
-           zorder=5, edgecolors='white', linewidths=3)
-ax.plot(['2026', '2027'], [inf_2026, inf_2027], color='#666666', linestyle='--', linewidth=2, alpha=0.5)
+# Expectativas como linha com pontos grandes
+ax.plot(['2026', '2027'], [inf_2026, inf_2027], 'o-', color='#08082a', linewidth=3, 
+        markersize=15, markerfacecolor='#dfac16', markeredgewidth=3, markeredgecolor='#08082a', zorder=5)
 
 for ano, val in zip(['2026', '2027'], [inf_2026, inf_2027]):
     ax.annotate(f'{val:.2f}%', (ano, val), textcoords="offset points", 
-                xytext=(0, 15), ha='center', fontsize=12, fontweight='bold', color='#08082a')
+                xytext=(0, 18), ha='center', fontsize=12, fontweight='bold', color='#08082a')
 
 ax.set_ylabel('Inflação (%)', fontsize=12)
 ax.set_title('Expectativas de Inflação vs Meta do BCB', fontsize=14, fontweight='bold', color='#08082a')
 ax.set_ylim(0, 6)
 ax.legend(loc='upper right')
+ax.grid(True, alpha=0.3)
 
 plt.tight_layout()
 plt.show()

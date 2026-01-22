@@ -1,3 +1,9 @@
 analise_ipca_files/
 analise_ipca.html
 .venv/
+/.quarto/
+**/*.quarto_ipynb
+.xlsx
+.ipynb_checkpoints/
+relatórios/
+expectativas_filtradas.json

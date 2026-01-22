@@ -4,7 +4,7 @@ import urllib.parse # Para codificar a URL corretamente
 
 # --- CONFIGURAÇÃO DE DATAS ---
 data_inicio_pesquisa = "2026-01-01"  # Data da coleta (início)
-data_fim_pesquisa    = "2026-01-31"  # Data da coleta (fim)
+data_fim_pesquisa    = "2026-01-22"  # Data da coleta (fim)
 # -----------------------------
 
 url_base = "https://olinda.bcb.gov.br/olinda/servico/Expectativas/versao/v1/odata/ExpectativasMercadoTop5Mensais"
